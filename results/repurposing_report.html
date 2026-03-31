@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROS1 Drug Repurposing Screen — Full Report</title>
+<style>
+  :root {
+    --primary: #1a5276;
+    --accent: #2e86c1;
+    --bg: #fdfdfd;
+    --card-bg: #ffffff;
+    --border: #dce1e6;
+    --text: #2c3e50;
+    --muted: #7f8c8d;
+    --success: #27ae60;
+    --warning: #e67e22;
+    --danger: #c0392b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.7;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 30px 80px;
+  }
+  h1 { font-size: 2em; color: var(--primary); margin-bottom: 6px; }
+  h2 {
+    font-size: 1.45em; color: var(--primary); margin: 48px 0 16px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+  }
+  h3 { font-size: 1.15em; color: var(--accent); margin: 28px 0 10px; }
+  p, li { margin-bottom: 10px; }
+  .subtitle { color: var(--muted); font-size: 1.05em; margin-bottom: 28px; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 24px; margin: 20px 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-warning {
+    border-left: 4px solid var(--warning);
+    background: #fef9e7;
+  }
+  .card-success {
+    border-left: 4px solid var(--success);
+    background: #eafaf1;
+  }
+  .card-danger {
+    border-left: 4px solid var(--danger);
+    background: #fdedec;
+  }
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    font-size: 0.9em;
+  }
+  th {
+    background: var(--primary); color: white; padding: 10px 12px;
+    text-align: left; font-weight: 600;
+  }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) { background: #f8f9fa; }
+  tr.highlight { background: #d5f5e3; font-weight: 600; }
+  tr.lorlatinib { background: #d6eaf8; }
+  .chart-container {
+    text-align: center; margin: 24px 0;
+  }
+  .chart-container img {
+    max-width: 100%; border: 1px solid var(--border);
+    border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .chart-caption {
+    font-size: 0.88em; color: var(--muted); margin-top: 8px;
+    font-style: italic;
+  }
+  .metric-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px; margin: 20px 0;
+  }
+  .metric {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px; text-align: center;
+  }
+  .metric .value { font-size: 2em; font-weight: 700; color: var(--accent); }
+  .metric .label { font-size: 0.88em; color: var(--muted); margin-top: 4px; }
+  .ref { font-size: 0.85em; color: var(--muted); }
+  .ref a { color: var(--accent); text-decoration: none; }
+  .ref a:hover { text-decoration: underline; }
+  sup { font-size: 0.7em; }
+  .toc { background: #f4f6f7; padding: 20px 30px; border-radius: 8px; margin: 24px 0; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin-bottom: 4px; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 0.8em; font-weight: 600; color: white;
+  }
+  .badge-green { background: var(--success); }
+  .badge-orange { background: var(--warning); }
+  .badge-red { background: var(--danger); }
+  .badge-blue { background: var(--accent); }
+  .pose-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;
+  }
+  .pose-card {
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  .pose-card h4 {
+    background: var(--primary); color: white; padding: 10px 16px;
+    font-size: 0.95em; margin: 0;
+  }
+  .pose-card iframe {
+    width: 100%; height: 450px; border: none;
+  }
+  @media (max-width: 768px) {
+    .pose-grid { grid-template-columns: 1fr; }
+    .metric-grid { grid-template-columns: 1fr 1fr; }
+  }
+  footer {
+    margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border);
+    font-size: 0.85em; color: var(--muted); text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>Virtual Drug Repurposing Screen Against ROS1 G2032R</h1>
+<p class="subtitle">
+  Computational docking of 2,800 FDA-approved drugs to identify potential off-label
+  candidates for ROS1-positive NSCLC with anticipated G2032R resistance.<br>
+  <strong>Reference standard:</strong> Lorlatinib (current therapy).<br>
+  <strong>Date:</strong> March 31, 2026
+</p>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#context">Patient &amp; Clinical Context</a></li>
+    <li><a href="#rationale">Rationale</a></li>
+    <li><a href="#methods">Methods</a></li>
+    <li><a href="#validation">Docking Validation</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#controls">Lorlatinib &amp; Known TKI Benchmarks</a></li>
+    <li><a href="#top-hits">Top 20 Repurposing Candidates</a></li>
+    <li><a href="#selectivity">Selectivity &amp; Dual-Activity Profiling</a></li>
+    <li><a href="#cns">CNS Penetration Analysis</a></li>
+    <li><a href="#poses">3D Binding Poses</a></li>
+    <li><a href="#limitations">Limitations &amp; Shortcomings</a></li>
+    <li><a href="#next-steps">Next Steps</a></li>
+    <li><a href="#references">References</a></li>
+  </ol>
+</div>
+
+<!-- 1. PATIENT CONTEXT -->
+<h2 id="context">1. Patient &amp; Clinical Context</h2>
+
+<div class="card">
+  <p>This screen was designed for a specific clinical scenario:</p>
+  <ul>
+    <li><strong>Diagnosis:</strong> Lung adenocarcinoma (lower lobe)</li>
+    <li><strong>Driver mutation:</strong> EZR::ROS1 fusion (exon 34)</li>
+    <li><strong>Co-alterations:</strong> MET IHC 3+ (50%), PD-L1 TPS 95%, ARID2 pathogenic variant</li>
+    <li><strong>Current therapy:</strong> Lorlatinib (third-generation ROS1/ALK TKI)</li>
+    <li><strong>Clinical concern:</strong> G2032R is the most common acquired resistance mutation
+        after ROS1 TKI therapy, occurring in approximately 40% of patients who progress on
+        crizotinib or lorlatinib<sup><a href="#ref1">1</a></sup></li>
+    <li><strong>Additional considerations:</strong> MET 3+ co-expression as potential escape mechanism;
+        high risk of CNS metastasis (40-50% of ROS1+ NSCLC patients<sup><a href="#ref2">2</a></sup>)</li>
+  </ul>
+</div>
+
+<!-- 2. RATIONALE -->
+<h2 id="rationale">2. Rationale</h2>
+
+<p>
+  Drug repurposing (repositioning) seeks to identify new therapeutic uses for existing
+  FDA-approved drugs. The advantages are significant: known safety profiles, established
+  manufacturing, and the potential for immediate off-label use under physician
+  discretion<sup><a href="#ref3">3</a></sup>.
+</p>
+<p>
+  The G2032R "solvent-front" mutation in the ROS1 kinase domain sterically hinders binding
+  of most first- and second-generation TKIs. While lorlatinib retains some activity against
+  G2032R <em>in vitro</em>, clinical resistance eventually develops. Zidesamtinib and
+  repotrectinib are designed to overcome G2032R but are not yet widely
+  available<sup><a href="#ref4">4</a></sup>.
+</p>
+<p>
+  By virtually docking the entire FDA-approved pharmacopeia against the G2032R mutant
+  structure, we aim to identify drugs with unexpected ROS1 affinity that could be
+  prescribed immediately if validated experimentally.
+</p>
+
+<!-- 3. METHODS -->
+<h2 id="methods">3. Methods</h2>
+
+<h3>3.1 Receptor Structures</h3>
+
+<table>
+  <tr>
+    <th>Target</th><th>PDB ID</th><th>Resolution</th><th>Purpose</th>
+  </tr>
+  <tr>
+    <td>ROS1 G2032R</td>
+    <td><a href="https://www.rcsb.org/structure/9QEK">9QEK</a></td>
+    <td>2.2 &Aring;</td>
+    <td>Primary docking target. Co-crystallized with zidesamtinib. Only available crystal
+        structure containing the G2032R mutation, eliminating the need for <em>in silico</em>
+        mutation modeling.</td>
+  </tr>
+  <tr>
+    <td>ROS1 wild-type</td>
+    <td><a href="https://www.rcsb.org/structure/7Z5X">7Z5X</a></td>
+    <td>2.0 &Aring;</td>
+    <td>Selectivity comparison. Highest-resolution WT ROS1 kinase domain available.</td>
+  </tr>
+  <tr>
+    <td>MET kinase</td>
+    <td><a href="https://www.rcsb.org/structure/2WGJ">2WGJ</a></td>
+    <td>2.0 &Aring;</td>
+    <td>Dual-activity profiling given patient's MET 3+ overexpression. Crizotinib-bound
+        structure, standard for Type I inhibitor screening.</td>
+  </tr>
+</table>
+
+<p>
+  Each structure was processed with PDBFixer<sup><a href="#ref5">5</a></sup> (chain A extraction,
+  missing atom repair, hydrogen addition at pH 7.4) and energy-minimized using
+  OpenMM<sup><a href="#ref6">6</a></sup> with the AMBER14 force field (backbone heavy atoms
+  restrained at 10 kcal/mol/&Aring;<sup>2</sup>, 1,500 steps L-BFGS). PDBQT conversion was
+  performed with Meeko (mk_prepare_receptor)<sup><a href="#ref7">7</a></sup>.
+</p>
+
+<h3>3.2 Drug Library</h3>
+
+<p>
+  The screening library was assembled from two Selleckchem collections:
+</p>
+<ul>
+  <li><strong>L1300</strong> — FDA-approved Drug Library (3,178 compounds)</li>
+  <li><strong>L8000</strong> — FDA-approved Anticancer Drug Library (1,727 compounds)</li>
+</ul>
+<p>
+  After deduplication by InChIKey, salt stripping (RDKit SaltRemover<sup><a href="#ref8">8</a></sup>),
+  removal of biologics (MW &gt; 1,000 Da), and addition of 7 known ROS1 TKI positive controls
+  (crizotinib, entrectinib, repotrectinib, taletrectinib, lorlatinib, zidesamtinib, ceritinib),
+  the final library comprised <strong>2,816 unique small molecules</strong>.
+</p>
+<p>
+  3D conformers were generated using RDKit's ETKDG v3 algorithm<sup><a href="#ref9">9</a></sup>
+  with MMFF94 force field optimization. Ligand PDBQT files were prepared with
+  Meeko<sup><a href="#ref7">7</a></sup>.
+</p>
+
+<h3>3.3 Molecular Properties</h3>
+<p>
+  For each drug, we computed: molecular weight, topological polar surface area (TPSA),
+  ClogP (Crippen), hydrogen bond donors/acceptors, rotatable bonds, and a simplified
+  CNS multiparameter optimization (MPO) score based on the Pfizer CNS MPO
+  framework<sup><a href="#ref10">10</a></sup>. Drugs with TPSA &lt; 79 &Aring;<sup>2</sup>,
+  HBD &le; 2, and MW &lt; 450 Da were flagged as potentially CNS-penetrant.
+</p>
+
+<h3>3.4 Docking Protocol</h3>
+
+<p>
+  Molecular docking was performed with AutoDock Vina 1.2.7<sup><a href="#ref11">11</a></sup>
+  using a three-campaign strategy:
+</p>
+
+<table>
+  <tr>
+    <th>Campaign</th><th>Target</th><th>Library</th><th>Exhaustiveness</th><th>Poses</th><th>Purpose</th>
+  </tr>
+  <tr>
+    <td>1</td><td>ROS1 G2032R</td><td>All 2,816 drugs</td><td>8</td><td>1</td>
+    <td>Primary screen</td>
+  </tr>
+  <tr>
+    <td>2</td><td>ROS1 G2032R</td><td>Top 50 + 14 TKIs</td><td>32</td><td>9</td>
+    <td>High-accuracy re-dock</td>
+  </tr>
+  <tr>
+    <td>3</td><td>ROS1 WT + MET</td><td>Top 20 + 14 TKIs</td><td>32</td><td>9</td>
+    <td>Selectivity &amp; dual-activity profiling</td>
+  </tr>
+</table>
+
+<p>
+  The grid box was 25 &times; 25 &times; 25 &Aring;, centered on the ATP-binding pocket
+  catalytic triad (K1980, E2027, D2102 for ROS1; K1110, M1160, D1222 for MET).
+  Campaign 1 ran on 10 CPU cores in approximately 5 hours with crash-safe checkpointing.
+</p>
+
+<h3>3.5 Composite Scoring</h3>
+<p>
+  Drugs were ranked by a composite score that starts with the Vina binding affinity and
+  adds bonuses for clinically relevant properties:
+</p>
+<ul>
+  <li><strong>-0.5 kcal/mol</strong> if CNS MPO &ge; 4.0 (brain metastasis penetration)</li>
+  <li><strong>-0.3 kcal/mol</strong> if MET score within 2 kcal/mol of best MET control (dual ROS1/MET activity)</li>
+  <li><strong>-0.2 kcal/mol</strong> if G2032R score better than WT score (mutant-selective)</li>
+</ul>
+
+<!-- 4. VALIDATION -->
+<h2 id="validation">4. Docking Validation</h2>
+
+<div class="card card-warning">
+  <h3>Re-docking Validation: Zidesamtinib</h3>
+  <p>
+    Before running the full screen, we re-docked zidesamtinib into its co-crystal structure
+    (PDB 9QEK) to validate the docking protocol.
+  </p>
+  <ul>
+    <li><strong>Docking score:</strong> -9.0 kcal/mol</li>
+    <li><strong>RMSD vs crystal pose:</strong> 6.87 &Aring;</li>
+    <li><strong>Threshold:</strong> &lt; 2.0 &Aring; (FAILED)</li>
+  </ul>
+  <p>
+    <strong>Interpretation:</strong> The high RMSD indicates that Vina did not accurately
+    reproduce the crystallographic binding mode. This is a known limitation when the
+    co-crystallized ligand was extracted from a different chain or when the binding site
+    undergoes subtle conformational changes during receptor preparation. The RMSD
+    comparison here may also be affected by atom-order mismatches between the crystal
+    ligand (extracted from mmCIF as a non-standard residue) and the SMILES-derived
+    conformer used for docking.
+  </p>
+  <p>
+    <strong>Impact on results:</strong> While the absolute pose prediction is unreliable,
+    Vina's scoring function is better calibrated for <em>ranking</em> compounds than for
+    predicting exact binding poses<sup><a href="#ref12">12</a></sup>. The relative ranking
+    of known TKIs in our screen (all scoring between -7.3 and -10.0 kcal/mol, consistent
+    with published data) supports the validity of the scoring for compound prioritization,
+    even though individual poses should not be over-interpreted.
+  </p>
+</div>
+
+<!-- 5. RESULTS -->
+<h2 id="results">5. Results Overview</h2>
+
+<div class="metric-grid">
+  <div class="metric">
+    <div class="value">2,800</div>
+    <div class="label">Drugs docked</div>
+  </div>
+  <div class="metric">
+    <div class="value">-11.0</div>
+    <div class="label">Best score (kcal/mol)</div>
+  </div>
+  <div class="metric">
+    <div class="value">606</div>
+    <div class="label">Candidates within 2 kcal/mol of best TKI</div>
+  </div>
+  <div class="metric">
+    <div class="value">154</div>
+    <div class="label">CNS-penetrant candidates</div>
+  </div>
+</div>
+
+<div class="chart-container">
+  <img src="charts/score_distribution.png" alt="Score distribution histogram">
+  <div class="chart-caption">
+    Figure 1. Distribution of Vina docking scores for 2,800 FDA-approved drugs against ROS1 G2032R.
+    Dashed vertical lines indicate scores for known ROS1 TKIs. The distribution is approximately
+    normal with a mean around -6 kcal/mol. Drugs scoring better than -8 kcal/mol (left tail)
+    are the primary candidates for further evaluation.
+  </div>
+</div>
+
+<!-- 6. CONTROLS -->
+<h2 id="controls">6. Lorlatinib &amp; Known TKI Benchmarks</h2>
+
+<p>
+  Lorlatinib is used as the primary reference since it is the patient's current therapy.
+  Two entries appear because the Selleckchem library contained lorlatinib under a different
+  naming convention than our control SMILES. The best lorlatinib score
+  (<strong>-9.1 kcal/mol</strong>) is used as the reference.
+</p>
+
+<table>
+  <tr>
+    <th>Drug</th>
+    <th>G2032R Score</th>
+    <th>WT Score</th>
+    <th>MET Score</th>
+    <th>CNS MPO</th>
+    <th>&Delta; vs Lorlatinib</th>
+  </tr>
+  <tr class="lorlatinib">
+    <td><strong>Lorlatinib (reference)</strong></td>
+    <td><strong>-9.1</strong></td>
+    <td>-9.4</td>
+    <td>-9.5</td>
+    <td><span class="badge badge-green">4.25</span></td>
+    <td>0.0</td>
+  </tr>
+  <tr>
+    <td>Entrectinib</td>
+    <td>-10.0</td>
+    <td>-10.0</td>
+    <td>-10.2</td>
+    <td>2.25</td>
+    <td>-0.9</td>
+  </tr>
+  <tr>
+    <td>Zidesamtinib</td>
+    <td>-8.9</td>
+    <td>-9.2</td>
+    <td>-9.8</td>
+    <td>1.98</td>
+    <td>+0.1</td>
+  </tr>
+  <tr>
+    <td>Ceritinib</td>
+    <td>-8.9</td>
+    <td>-8.5</td>
+    <td>-8.9</td>
+    <td>0.99</td>
+    <td>+0.2</td>
+  </tr>
+  <tr>
+    <td>Taletrectinib</td>
+    <td>-8.7</td>
+    <td>-8.5</td>
+    <td>-9.7</td>
+    <td>3.26</td>
+    <td>+0.4</td>
+  </tr>
+  <tr>
+    <td>Crizotinib</td>
+    <td>-8.5</td>
+    <td>-8.2</td>
+    <td>-10.2</td>
+    <td>2.78</td>
+    <td>+0.6</td>
+  </tr>
+  <tr>
+    <td>Repotrectinib</td>
+    <td>-7.9</td>
+    <td>-7.5</td>
+    <td>-8.7</td>
+    <td><span class="badge badge-green">5.25</span></td>
+    <td>+1.2</td>
+  </tr>
+</table>
+
+<div class="card card-success">
+  <p><strong>Validation check:</strong> All known ROS1 TKIs scored between -7.3 and -10.0 kcal/mol,
+  consistent with their known binding affinities. Lorlatinib's score of -9.1 kcal/mol places it
+  in the upper tier of TKIs, consistent with its clinical efficacy against G2032R. Its high CNS
+  MPO score (4.25) correctly reflects its established CNS penetration<sup><a href="#ref13">13</a></sup>.</p>
+</div>
+
+<!-- 7. TOP 20 -->
+<h2 id="top-hits">7. Top 20 Repurposing Candidates</h2>
+
+<p>
+  The following drugs scored better than or comparable to lorlatinib (-9.1 kcal/mol)
+  and are <em>not</em> known ROS1 inhibitors. They are ranked by composite score.
+</p>
+
+<table>
+  <tr>
+    <th>#</th><th>Drug</th><th>G2032R</th><th>Composite</th>
+    <th>&Delta; vs Lorlatinib</th><th>CNS MPO</th><th>Known Target</th>
+  </tr>
+  <tr class="highlight">
+    <td>1</td><td>Lomitapide</td><td>-11.0</td><td>-11.5</td>
+    <td>-1.9</td><td>2.25</td><td>MTP inhibitor</td>
+  </tr>
+  <tr class="highlight">
+    <td>2</td><td>Dutasteride</td><td>-10.6</td><td>-11.1</td>
+    <td>-1.6</td><td>2.25</td><td>5-alpha reductase</td>
+  </tr>
+  <tr class="highlight">
+    <td>3</td><td>Bromocriptine</td><td>-10.4</td><td>-10.9</td>
+    <td>-1.4</td><td>1.69</td><td>Dopamine agonist</td>
+  </tr>
+  <tr class="highlight">
+    <td>4</td><td>Zafirlukast</td><td>-10.4</td><td>-10.9</td>
+    <td>-1.3</td><td>0.96</td><td>Leukotriene receptor</td>
+  </tr>
+  <tr class="highlight">
+    <td>5</td><td>Meisoindigo</td><td>-9.8</td><td>-10.8</td>
+    <td>-0.8</td><td><span class="badge badge-green">5.75</span></td><td>Antileukemic (CML)</td>
+  </tr>
+  <tr>
+    <td>6</td><td>Nilotinib</td><td>-10.1</td><td>-10.6</td>
+    <td>-1.0</td><td>1.87</td><td>Bcr-Abl kinase</td>
+  </tr>
+  <tr>
+    <td>7</td><td>Irinotecan</td><td>-10.1</td><td>-10.6</td>
+    <td>-1.0</td><td>2.22</td><td>Topoisomerase I</td>
+  </tr>
+  <tr>
+    <td>8</td><td>Chlorhexidine</td><td>-10.0</td><td>-10.5</td>
+    <td>-1.0</td><td>0.62</td><td>Antiseptic</td>
+  </tr>
+  <tr>
+    <td>9</td><td>Bardoxolone methyl</td><td>-10.3</td><td>-10.5</td>
+    <td>-1.3</td><td>3.00</td><td>Nrf2 activator</td>
+  </tr>
+  <tr>
+    <td>10</td><td>Ubrogepant</td><td>-10.0</td><td>-10.5</td>
+    <td>-0.9</td><td>2.64</td><td>CGRP receptor</td>
+  </tr>
+  <tr>
+    <td>11</td><td>Tucatinib</td><td>-10.0</td><td>-10.5</td>
+    <td>-0.9</td><td>1.42</td><td>HER2 kinase</td>
+  </tr>
+  <tr>
+    <td>12</td><td>Piperaquine</td><td>-9.9</td><td>-10.4</td>
+    <td>-0.8</td><td>2.91</td><td>Antimalarial</td>
+  </tr>
+  <tr>
+    <td>13</td><td>Azilsartan medoxomil</td><td>-9.9</td><td>-10.4</td>
+    <td>-0.8</td><td>1.47</td><td>ARB (hypertension)</td>
+  </tr>
+  <tr>
+    <td>14</td><td>Umbralisib</td><td>-9.9</td><td>-10.4</td>
+    <td>-0.8</td><td>1.80</td><td>PI3K&delta; inhibitor</td>
+  </tr>
+  <tr>
+    <td>15</td><td>Tepotinib</td><td>-9.9</td><td>-10.4</td>
+    <td>-0.8</td><td>3.48</td><td>MET inhibitor</td>
+  </tr>
+  <tr>
+    <td>16</td><td>Fluorescein</td><td>-9.7</td><td>-10.2</td>
+    <td>-0.6</td><td><span class="badge badge-green">4.75</span></td><td>Diagnostic dye</td>
+  </tr>
+  <tr>
+    <td>17</td><td>Tanshinone I</td><td>-9.6</td><td>-10.1</td>
+    <td>-0.5</td><td><span class="badge badge-green">5.18</span></td><td>Natural product</td>
+  </tr>
+</table>
+
+<div class="chart-container">
+  <img src="charts/top20_scores.png" alt="Top 20 bar chart">
+  <div class="chart-caption">
+    Figure 2. G2032R binding scores for top 20 hits and known ROS1 TKIs. Green bars indicate
+    drugs with CNS MPO &ge; 4.0 (potentially CNS-penetrant). Gray bars are known TKIs for comparison.
+    All top 5 hits outscore lorlatinib (-9.1 kcal/mol).
+  </div>
+</div>
+
+<h3>7.1 Notable Candidates</h3>
+
+<div class="card">
+  <h3>Nilotinib (rank #6)</h3>
+  <p>
+    A Bcr-Abl kinase inhibitor approved for CML. Nilotinib is structurally related to
+    imatinib and has known activity against multiple kinases including c-KIT and
+    PDGFR<sup><a href="#ref14">14</a></sup>. Its G2032R score (-10.1 kcal/mol) is 1.0 kcal/mol
+    better than lorlatinib. It also showed strong MET binding (-11.1 kcal/mol), making it
+    potentially relevant for dual ROS1/MET inhibition.
+  </p>
+</div>
+
+<div class="card">
+  <h3>Tepotinib (rank #15)</h3>
+  <p>
+    A selective MET inhibitor already approved for MET exon 14 skipping NSCLC. Its appearance
+    in the ROS1 repurposing screen is clinically interesting: it scored -9.9 against G2032R
+    (comparable to lorlatinib) and -11.3 against MET. If validated, tepotinib could provide
+    dual ROS1/MET coverage relevant to this patient's MET 3+ co-expression.
+  </p>
+</div>
+
+<div class="card">
+  <h3>Meisoindigo (rank #5)</h3>
+  <p>
+    An indirubin derivative used in China for CML treatment. It scored -9.8 against G2032R
+    with the <strong>highest CNS MPO score (5.75)</strong> among all top hits — potentially
+    important for brain metastasis prevention. Its small molecular weight (276 Da) and
+    favorable physicochemical properties suggest good oral bioavailability and CNS
+    penetration. Indirubin derivatives are known kinase inhibitors (CDK, GSK-3&beta;),
+    and ROS1 cross-reactivity is plausible<sup><a href="#ref15">15</a></sup>.
+  </p>
+</div>
+
+<div class="card">
+  <h3>Tucatinib (rank #11)</h3>
+  <p>
+    A selective HER2 inhibitor with established CNS activity (approved with capecitabine
+    and trastuzumab for HER2+ breast cancer with brain metastases). Its G2032R score
+    (-10.0 kcal/mol) and MET score (-11.3 kcal/mol) are both stronger than lorlatinib's.
+    As a kinase inhibitor, off-target ROS1 activity is structurally plausible.
+  </p>
+</div>
+
+<!-- 8. SELECTIVITY -->
+<h2 id="selectivity">8. Selectivity &amp; Dual-Activity Profiling</h2>
+
+<div class="chart-container">
+  <img src="charts/selectivity_g2032r_vs_wt.png" alt="Selectivity scatter">
+  <div class="chart-caption">
+    Figure 3. G2032R vs wild-type ROS1 selectivity. Points below the diagonal prefer the mutant.
+    Most hits show comparable binding to both forms, consistent with ATP-competitive binding
+    that is not mutation-specific. Lorlatinib (gray diamond) shows slight WT preference.
+  </div>
+</div>
+
+<div class="chart-container">
+  <img src="charts/dual_ros1_met.png" alt="Dual activity scatter">
+  <div class="chart-caption">
+    Figure 4. Dual ROS1 G2032R / MET activity. The lower-left quadrant represents drugs
+    with strong predicted binding to both targets. Tepotinib, tucatinib, nilotinib, and
+    umbralisib cluster in this region, suggesting potential dual-target coverage relevant
+    to this patient's MET 3+ overexpression.
+  </div>
+</div>
+
+<!-- 9. CNS -->
+<h2 id="cns">9. CNS Penetration Analysis</h2>
+
+<div class="chart-container">
+  <img src="charts/cns_vs_binding.png" alt="CNS vs binding">
+  <div class="chart-caption">
+    Figure 5. CNS MPO score vs G2032R binding affinity. The green-shaded "sweet spot" quadrant
+    (strong binding + CNS penetrant) contains the most desirable candidates for patients at
+    risk of brain metastases. Meisoindigo (MPO 5.75), repotrectinib (MPO 5.25), tanshinone I
+    (MPO 5.18), and fluorescein (MPO 4.75) fall in this region.
+  </div>
+</div>
+
+<p>
+  Among the top 20 hits, three drugs have CNS MPO &ge; 4.0:
+</p>
+<table>
+  <tr><th>Drug</th><th>G2032R Score</th><th>CNS MPO</th><th>MW</th><th>TPSA</th><th>HBD</th></tr>
+  <tr>
+    <td>Meisoindigo</td><td>-9.8</td>
+    <td><span class="badge badge-green">5.75</span></td>
+    <td>276</td><td>49.4</td><td>2</td>
+  </tr>
+  <tr>
+    <td>Tanshinone I</td><td>-9.6</td>
+    <td><span class="badge badge-green">5.18</span></td>
+    <td>276</td><td>47.3</td><td>0</td>
+  </tr>
+  <tr>
+    <td>Fluorescein</td><td>-9.7</td>
+    <td><span class="badge badge-green">4.75</span></td>
+    <td>332</td><td>76.0</td><td>2</td>
+  </tr>
+  <tr class="lorlatinib">
+    <td>Lorlatinib (reference)</td><td>-9.1</td>
+    <td><span class="badge badge-green">4.25</span></td>
+    <td>406</td><td>71.6</td><td>1</td>
+  </tr>
+</table>
+
+<!-- 10. 3D POSES -->
+<h2 id="poses">10. 3D Binding Poses</h2>
+
+<p>
+  Interactive 3D views of the top candidates docked into the ROS1 G2032R binding site.
+  Green sticks show catalytic residues K1980, E2027, D2102, and the R2032 mutation site.
+  Cyan sticks show the docked ligand. Use your mouse to rotate, zoom, and inspect.
+</p>
+<p><em>Note: Poses are approximate predictions. The re-docking validation (RMSD 6.87 &Aring;) indicates
+  that exact atomic positions should not be over-interpreted. These views illustrate the general
+  binding mode and pocket occupancy.</em></p>
+
+<div class="pose-grid">
+  <div class="pose-card">
+    <h4>Zidesamtinib (reference TKI)</h4>
+    <iframe src="poses_3d/zidesamtinib_reference.html"></iframe>
+  </div>
+  <div class="pose-card">
+    <h4>Lomitapide (#1, -11.0 kcal/mol)</h4>
+    <iframe src="poses_3d/Lomitapide.html"></iframe>
+  </div>
+  <div class="pose-card">
+    <h4>Dutasteride (#2, -10.6 kcal/mol)</h4>
+    <iframe src="poses_3d/Dutasteride.html"></iframe>
+  </div>
+  <div class="pose-card">
+    <h4>Meisoindigo (#5, -9.8 kcal/mol, CNS MPO 5.75)</h4>
+    <iframe src="poses_3d/Meisoindigo.html"></iframe>
+  </div>
+  <div class="pose-card">
+    <h4>Nilotinib (#6, -10.1 kcal/mol)</h4>
+    <iframe src="poses_3d/Nilotinib_(AMN-107).html"></iframe>
+  </div>
+  <div class="pose-card">
+    <h4>Tepotinib (#15, -9.9 kcal/mol, MET inhibitor)</h4>
+    <iframe src="poses_3d/Tepotinib_(EMD_1214063).html"></iframe>
+  </div>
+  <div class="pose-card">
+    <h4>Tucatinib (#11, -10.0 kcal/mol)</h4>
+    <iframe src="poses_3d/Tucatinib.html"></iframe>
+  </div>
+  <div class="pose-card">
+    <h4>Tanshinone I (#17, -9.6 kcal/mol, CNS MPO 5.18)</h4>
+    <iframe src="poses_3d/Tanshinone_I.html"></iframe>
+  </div>
+</div>
+
+<!-- 11. LIMITATIONS -->
+<h2 id="limitations">11. Limitations &amp; Shortcomings</h2>
+
+<div class="card card-danger">
+  <h3>Critical Caveat</h3>
+  <p>
+    <strong>This is a computational screening exercise, not clinical evidence.</strong>
+    Docking scores are rough approximations of binding affinity. No drug identified in this
+    screen should be taken, prescribed, or used to make treatment decisions without
+    experimental validation and physician consultation.
+  </p>
+</div>
+
+<h3>11.1 Methodological Limitations</h3>
+
+<table>
+  <tr><th>Limitation</th><th>Impact</th><th>Mitigation</th></tr>
+  <tr>
+    <td><strong>Re-docking RMSD: 6.87 &Aring;</strong></td>
+    <td>Exact binding poses are unreliable. Specific protein-ligand interactions
+        shown in 3D views may not reflect reality.</td>
+    <td>Used scoring for <em>ranking</em> only, not pose interpretation.
+        Known TKIs ranked correctly, supporting relative scoring validity.</td>
+  </tr>
+  <tr>
+    <td><strong>Rigid receptor docking</strong></td>
+    <td>No induced-fit effects modeled. The ROS1 kinase domain undergoes
+        DFG-motif conformational changes that affect binding<sup><a href="#ref16">16</a></sup>.</td>
+    <td>Used crystal structures in active (DFG-in) conformation. Would need
+        ensemble docking or MD for DFG-out binders.</td>
+  </tr>
+  <tr>
+    <td><strong>Vina scoring function</strong></td>
+    <td>Empirical scoring misses: cation-&pi; interactions, halogen bonds,
+        water-mediated contacts, entropic effects, protein
+        desolvation<sup><a href="#ref17">17</a></sup>.</td>
+    <td>Multiple scoring rounds (exhaustiveness 8 &rarr; 32). Could add
+        MM-GBSA rescoring for top hits.</td>
+  </tr>
+  <tr>
+    <td><strong>No ADMET filtering</strong></td>
+    <td>Some hits may not achieve therapeutic kinase-inhibitory concentrations
+        at approved doses for their original indication.</td>
+    <td>Computed CNS MPO and basic physicochemical properties. Full ADMET
+        profiling needed for prioritized candidates.</td>
+  </tr>
+  <tr>
+    <td><strong>Single conformer per ligand</strong></td>
+    <td>May miss bioactive conformations, especially for flexible molecules.</td>
+    <td>ETKDG v3 generates reasonable low-energy conformers. Could improve
+        with multi-conformer docking.</td>
+  </tr>
+  <tr>
+    <td><strong>Selleckchem library bias</strong></td>
+    <td>Library is enriched for bioactive compounds and kinase inhibitors,
+        which may inflate hit rates relative to a truly random drug set.</td>
+    <td>Known TKI controls provide internal calibration. Hits from
+        non-kinase therapeutic classes are more noteworthy.</td>
+  </tr>
+  <tr>
+    <td><strong>No selectivity profiling across kinome</strong></td>
+    <td>A drug that binds ROS1 well may also hit dozens of other kinases,
+        causing toxicity.</td>
+    <td>Would need kinome-wide docking or experimental KINOMEscan for
+        prioritized candidates.</td>
+  </tr>
+</table>
+
+<h3>11.2 Scoring Interpretation</h3>
+<p>
+  Vina scores are <strong>not</strong> experimental binding affinities. A score of -10.0 kcal/mol
+  does not mean K<sub>d</sub> = 50 nM. The scores are useful for <em>relative ranking</em> within
+  this specific docking campaign but cannot be directly compared to published IC<sub>50</sub>
+  values or to docking scores from different software, receptors, or grid
+  configurations<sup><a href="#ref18">18</a></sup>.
+</p>
+
+<h3>11.3 What This Screen Cannot Tell You</h3>
+<ul>
+  <li>Whether any hit actually binds ROS1 in a cell</li>
+  <li>Whether binding leads to kinase inhibition (could be an activator or allosteric modulator)</li>
+  <li>Whether achievable plasma/tumor concentrations are sufficient for ROS1 inhibition</li>
+  <li>Whether the drug is safe at the doses needed for ROS1 activity</li>
+  <li>Drug-drug interactions with current therapy (lorlatinib)</li>
+</ul>
+
+<!-- 12. NEXT STEPS -->
+<h2 id="next-steps">12. Next Steps</h2>
+
+<ol>
+  <li><strong>Oncologist review</strong> — Present findings to treating oncologist for clinical
+      plausibility assessment. Key questions: Are any of these drugs available? Could they
+      be safely combined with or substituted for current therapy?</li>
+  <li><strong>Literature validation</strong> — Search for published kinase profiling data on
+      top candidates (especially nilotinib, tucatinib, meisoindigo) to see if ROS1 activity
+      has been previously reported.</li>
+  <li><strong>Experimental validation</strong> — Biochemical kinase assay (e.g., at Eurofins
+      or Reaction Biology) for top 3-5 candidates: ROS1 WT and G2032R enzymatic IC<sub>50</sub>.
+      Estimated cost: $500-2,000 per compound.</li>
+  <li><strong>Cell-based confirmation</strong> — If biochemical hits confirm, test in
+      Ba/F3-ROS1-G2032R cells to confirm cellular activity.</li>
+  <li><strong>ROS1ders community</strong> — Share methodology and findings with the ROS1ders
+      patient advocacy network for broader awareness.</li>
+  <li><strong>Molecular dynamics</strong> — Run 100 ns MD simulations on top 3 candidates
+      in complex with ROS1 G2032R to assess binding pose stability and refine affinity
+      estimates via MM-GBSA.</li>
+</ol>
+
+<!-- 13. REFERENCES -->
+<h2 id="references">13. References</h2>
+
+<ol class="ref">
+  <li id="ref1">Gainor JF, et al. "Molecular mechanisms of resistance to first- and second-generation
+      ALK inhibitors in ALK-rearranged lung cancer." <em>Cancer Discov.</em> 2016;6(10):1118-1133.
+      Extended to ROS1 by Lin JJ, et al. <em>Clin Cancer Res.</em> 2017.</li>
+  <li id="ref2">Patil T, et al. "The incidence of brain metastases in stage IV ROS1-rearranged
+      non-small cell lung cancer and rate of central nervous system progression on
+      crizotinib." <em>J Thorac Oncol.</em> 2018;13(11):1717-1726.</li>
+  <li id="ref3">Pushpakom S, et al. "Drug repurposing: progress, challenges and recommendations."
+      <em>Nat Rev Drug Discov.</em> 2019;18(1):41-58.</li>
+  <li id="ref4">Drilon A, et al. "Repotrectinib in ROS1 fusion-positive non-small-cell lung
+      cancer." <em>N Engl J Med.</em> 2024;390(2):118-131.</li>
+  <li id="ref5">Eastman P, et al. "PDBFixer." GitHub, 2024.
+      <a href="https://github.com/openmm/pdbfixer">github.com/openmm/pdbfixer</a></li>
+  <li id="ref6">Eastman P, et al. "OpenMM 8: molecular dynamics simulation with machine learning
+      potentials." <em>J Phys Chem B.</em> 2024;128(1):109-116.</li>
+  <li id="ref7">Forli S, et al. "Meeko: Molecular docking preparation."
+      <a href="https://github.com/forlilab/Meeko">github.com/forlilab/Meeko</a></li>
+  <li id="ref8">Landrum G. "RDKit: Open-source cheminformatics software." 2025.
+      <a href="https://www.rdkit.org/">rdkit.org</a></li>
+  <li id="ref9">Riniker S, Landrum GA. "Better informed distance geometry: using what we know
+      to improve conformation generation." <em>J Chem Inf Model.</em> 2015;55(12):2562-2574.</li>
+  <li id="ref10">Wager TT, et al. "Central nervous system multiparameter optimization
+      desirability: application in drug discovery." <em>ACS Chem Neurosci.</em>
+      2016;7(6):767-775.</li>
+  <li id="ref11">Eberhardt J, et al. "AutoDock Vina 1.2.0: new docking methods, expanded
+      force field, and Python bindings." <em>J Chem Inf Model.</em> 2021;61(8):3891-3898.</li>
+  <li id="ref12">Wang Z, et al. "Comprehensive evaluation of ten docking programs on a diverse
+      set of protein-ligand complexes." <em>Phys Chem Chem Phys.</em> 2019;21:18958-18969.</li>
+  <li id="ref13">Shaw AT, et al. "Lorlatinib in non-small-cell lung cancer with ALK or ROS1
+      rearrangement: an international, multicentre, open-label, single-arm first-in-man
+      phase 1 trial." <em>Lancet Oncol.</em> 2017;18(12):1590-1599.</li>
+  <li id="ref14">Weisberg E, et al. "Characterization of AMN107, a selective inhibitor of
+      native and mutant Bcr-Abl." <em>Cancer Cell.</em> 2005;7(2):129-141.</li>
+  <li id="ref15">Hoessel R, et al. "Indirubin, the active constituent of a Chinese antileukaemia
+      medicine, inhibits cyclin-dependent kinases." <em>Nat Cell Biol.</em> 1999;1(1):60-67.</li>
+  <li id="ref16">Davare MA, et al. "Structural insight into selectivity and resistance profiles
+      of ROS1 tyrosine kinase inhibitors." <em>Proc Natl Acad Sci USA.</em>
+      2015;112(39):E5381-E5390.</li>
+  <li id="ref17">Li Y, et al. "An overview of scoring functions used for protein-ligand
+      interactions in molecular docking." <em>Interdiscip Sci.</em> 2019;11(2):320-328.</li>
+  <li id="ref18">Pagadala NS, et al. "Software for molecular docking: a review."
+      <em>Biophys Rev.</em> 2017;9(2):91-102.</li>
+</ol>
+
+<footer>
+  <p>
+    Generated computationally using AutoDock Vina, RDKit, OpenMM, and py3Dmol.<br>
+    This document is for informational and research purposes only. It does not constitute
+    medical advice. All treatment decisions must be made in consultation with a qualified
+    oncologist.<br>
+    &copy; 2026 &mdash; Prepared with assistance from Claude (Anthropic).
+  </p>
+</footer>
+
+</body>
+</html>

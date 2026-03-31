@@ -1,0 +1,31 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Large data files
+data/ligands/*.pdbqt
+data/*.pdb
+data/*.pdbqt
+data/*.SDF
+data/*.sdf
+data/*.cif
+data/chembl_kinase_inhibitors.json
+results/poses/*.pdbqt
+results/poses/**/*.pdbqt
+results/docking_progress.csv
+data/controls/*.pdb
+data/controls/*.pdbqt
+data/drugbank_approved.sdf
+
+# Patient / sensitive materials — NEVER commit
+support_materials/
+
+# macOS
+.DS_Store
