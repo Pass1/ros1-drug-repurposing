@@ -26,14 +26,14 @@ predicted binding affinity comparable to known ROS1 inhibitors.
 6. **For the top 20 hits**, also dock against wild-type ROS1, TRK-A
    (to check selectivity), and run ADMET checks.
 
-### Data sources (all free)
+### Data sources
 
-- **ROS1 structure**: PDB 3ZBF (https://www.rcsb.org/structure/3ZBF)
-- **TRK-A structure**: PDB 4AOJ
-- **DrugBank Open Data**: https://go.drugbank.com/releases/latest
-  → Download "Approved Drug Structures" (SDF or SMILES, CC0 license)
-- **ZINC FDA subset**: https://zinc20.docking.org/ → filter by
-  "FDA approved" → download SMILES
+- **ROS1 G2032R structure**: PDB 9QEK (https://www.rcsb.org/structure/9QEK)
+- **ROS1 WT structure**: PDB 7Z5X (https://www.rcsb.org/structure/7Z5X)
+- **MET structure**: PDB 2WGJ (https://www.rcsb.org/structure/2WGJ)
+- **FDA-approved drug libraries**: Selleckchem (https://www.selleckchem.com)
+  → L1300 FDA-approved Drug Library and L8000 FDA-approved Anticancer
+  Drug Library (SDF format)
 - **ChEMBL kinase inhibitors**: Search for all approved kinase
   inhibitors as a focused sub-library
 
@@ -56,8 +56,9 @@ A repurposing candidate should:
 
 ### Key packages
 ```
-pip install rdkit-pypi meeko vina biopython pdbfixer openmm numpy pandas
+uv add rdkit meeko vina biopython pdbfixer openmm numpy pandas
 ```
+- **RDKit**: https://github.com/rdkit/rdkit
 
 ### Grid box
 Center on the ATP binding pocket of chain A, residues K1980/E2027/D2102.
