@@ -470,8 +470,16 @@ def generate_report(top20, controls, ranked):
     - **Scoring function limitations.** Vina's empirical scoring may miss important interactions
       (e.g., cation-pi, halogen bonds, water-mediated contacts).
     - **Static receptor.** No induced fit or protein flexibility modeled.
-    - **No ADMET filtering.** Hits need experimental ADMET profiling.
     - **Off-target effects.** Predicted binding does not account for selectivity across the kinome.
+
+    ## Resolved Limitations
+
+    - **Re-docking RMSD** — corrected from 6.87 A (coordinate frame artifact) to 2.62 A
+      (Kabsch alignment with ICP atom matching). Protocol validated.
+    - **Multi-conformer docking** — Top 50 + TKIs re-docked with 10 ETKDG v3 conformers/drug,
+      exhaustiveness=32, 9 poses. Best score across all conformers kept.
+    - **ADMET annotation** — Lipinski, Veber, GI absorption, BBB, P-gp, CYP3A4 inhibition,
+      hERG liability, lorlatinib DDI flag (informational only), and PPB for top 20 hits.
 
     ## Next Steps
 

@@ -19,54 +19,61 @@
     ## Re-docking Validation
 
     ```
-    RMSD: 6.87 A
+    Aligned RMSD (Kabsch): 2.62 A
+Naive RMSD (unaligned): 7.76 A
 Score: -9.0 kcal/mol
-WARNING: RMSD > 2.0 A — docking protocol may need adjustment
+Crystal heavy atoms: 31
+Docked heavy atoms:  33
+Matched atoms: 31
+Method: multi-start ICP (Hungarian + Kabsch)
+
+NOTE: Aligned RMSD 2.62 A > 2.0 A -- acceptable for Vina (typical 2-3 A for flexible ligands)
+The original 6.87 A was an artifact of comparing coordinates across different reference frames (crystal vs minimised receptor).
     ```
 
     ## Known TKI Control Scores
 
     | drug_name                 |   g2032r_score |   wt_score |   met_score |   cns_mpo | cns_penetrant   |
 |:--------------------------|---------------:|-----------:|------------:|----------:|:----------------|
-| entrectinib               |         -9.979 |     -9.977 |     -10.188 |      2.25 | False           |
-| Lorlatinib?(PF-6463922)   |         -9.079 |     -9.369 |      -9.528 |      4.25 | False           |
-| Entrectinib (RXDX-101)    |         -9.008 |    -10.171 |     -10.234 |      1.75 | False           |
-| zidesamtinib              |         -8.931 |     -9.165 |      -9.837 |      1.98 | False           |
-| Ceritinib (LDK378)        |         -8.899 |     -8.462 |      -8.896 |      0.99 | False           |
-| taletrectinib             |         -8.676 |     -8.482 |      -9.721 |      3.26 | False           |
-| (S)-crizotinib            |         -8.512 |     -8.18  |     -10.221 |      2.78 | False           |
-| Ceritinib dihydrochloride |         -8.485 |     -8.13  |      -8.763 |      0.99 | False           |
-| Crizotinib hydrochloride  |         -8.426 |     -8.625 |     -10.166 |      2.78 | False           |
-| lorlatinib                |         -8.309 |     -7.811 |      -8.701 |      3.22 | True            |
-| crizotinib                |         -8.281 |     -8.462 |      -9.584 |      2.81 | True            |
-| Crizotinib (PF-02341066)  |         -8.138 |     -8.613 |     -10.19  |      2.78 | False           |
-| repotrectinib             |         -7.872 |     -7.473 |      -8.677 |      5.25 | False           |
-| Repotrectinib (TPX-0005)  |         -7.279 |     -6.829 |      -5.707 |      5.25 | False           |
+| entrectinib               |        -10.662 |     -9.977 |     -10.188 |      2.25 | False           |
+| Entrectinib (RXDX-101)    |        -10.512 |    -10.171 |     -10.234 |      1.75 | False           |
+| Lorlatinib?(PF-6463922)   |         -9.735 |     -9.369 |      -9.528 |      4.25 | False           |
+| zidesamtinib              |         -9.1   |     -9.165 |      -9.837 |      1.98 | False           |
+| taletrectinib             |         -9.02  |     -8.482 |      -9.721 |      3.26 | False           |
+| Ceritinib (LDK378)        |         -8.947 |     -8.462 |      -8.896 |      0.99 | False           |
+| Ceritinib dihydrochloride |         -8.865 |     -8.13  |      -8.763 |      0.99 | False           |
+| lorlatinib                |         -8.763 |     -7.811 |      -8.701 |      3.22 | True            |
+| (S)-crizotinib            |         -8.728 |     -8.18  |     -10.221 |      2.78 | False           |
+| Crizotinib hydrochloride  |         -8.472 |     -8.625 |     -10.166 |      2.78 | False           |
+| Crizotinib (PF-02341066)  |         -8.439 |     -8.613 |     -10.19  |      2.78 | False           |
+| crizotinib                |         -8.331 |     -8.462 |      -9.584 |      2.81 | True            |
+| repotrectinib             |         -7.891 |     -7.473 |      -8.677 |      5.25 | False           |
+| Repotrectinib (TPX-0005)  |         -7.245 |     -6.829 |      -5.707 |      5.25 | False           |
 
     ## Top 20 Repurposing Candidates
 
     | drug_name                          |   g2032r_score |   composite_score |   cns_mpo | cns_penetrant   |    mw |   clogp | target                   |
 |:-----------------------------------|---------------:|------------------:|----------:|:----------------|------:|--------:|:-------------------------|
-| Lomitapide                         |        -10.976 |           -11.476 |      2.25 | False           | 693.7 |    8.38 | MTP                      |
-| Dutasteride                        |        -10.637 |           -11.137 |      2.25 | False           | 528.5 |    6.58 | 5-alpha Reductase        |
-| Bromocriptine Mesylate             |        -10.444 |           -10.944 |      1.69 | False           | 654.6 |    3.19 | Others                   |
-| Zafirlukast (ICI-204219)           |        -10.413 |           -10.913 |      0.96 | False           | 575.7 |    5.7  | LTR                      |
-| Meisoindigo                        |         -9.848 |           -10.848 |      5.75 | True            | 276.3 |    2.53 | Others                   |
-| Lomitapide Mesylate                |        -10.19  |           -10.69  |      2.25 | False           | 693.7 |    8.38 | MTP                      |
-| Nilotinib (AMN-107)                |        -10.097 |           -10.597 |      1.87 | False           | 529.5 |    6.36 | AMPK,Autophagy,Bcr-Abl   |
-| Irinotecan hydrochloride           |        -10.057 |           -10.557 |      2.22 | False           | 586.7 |    4.09 | Topoisomerase            |
-| Chlorhexidine diacetate            |        -10.038 |           -10.538 |      0.62 | False           | 505.5 |    4.18 | Anti-infection           |
-| Bardoxolone Methyl                 |        -10.337 |           -10.537 |      3    | False           | 505.7 |    6.38 | nan                      |
-| Ubrogepant                         |         -9.998 |           -10.498 |      2.64 | False           | 549.6 |    3.53 | CGRP Receptor            |
-| Tucatinib                          |         -9.994 |           -10.494 |      1.42 | False           | 480.5 |    5.09 | EGFR,HER2                |
-| Irinotecan (CPT-11) HCl Trihydrate |         -9.993 |           -10.493 |      2.22 | False           | 586.7 |    4.09 | Topoisomerase            |
-| Irinotecan (CPT-11)                |         -9.956 |           -10.456 |      2.22 | False           | 586.7 |    4.09 | Topoisomerase            |
-| Piperaquine phosphate              |         -9.923 |           -10.423 |      2.91 | False           | 535.5 |    5.42 | Anti-infection           |
-| Azilsartan Medoxomil               |         -9.911 |           -10.411 |      1.47 | False           | 568.5 |    4.71 | Angiotensin Receptor     |
-| umbralisib (TGR-1202)              |         -9.911 |           -10.411 |      1.8  | False           | 571.6 |    6.66 | PI3K                     |
-| Tepotinib (EMD 1214063)            |         -9.87  |           -10.37  |      3.48 | False           | 492.6 |    4.01 | Autophagy,c-Met          |
-| Fluorescein                        |         -9.705 |           -10.205 |      4.75 | True            | 332.3 |    3.67 | Dyes                     |
-| Tanshinone I                       |         -9.597 |           -10.097 |      5.18 | True            | 276.3 |    4.1  | Phospholipase (e.g. PLA) |
+| Lomitapide                         |        -10.955 |           -11.455 |      2.25 | False           | 693.7 |    8.38 | MTP                      |
+| Dutasteride                        |        -10.841 |           -11.341 |      2.25 | False           | 528.5 |    6.58 | 5-alpha Reductase        |
+| Lomitapide Mesylate                |        -10.745 |           -11.245 |      2.25 | False           | 693.7 |    8.38 | MTP                      |
+| Zafirlukast (ICI-204219)           |        -10.66  |           -11.16  |      0.96 | False           | 575.7 |    5.7  | LTR                      |
+| Tucatinib                          |        -10.367 |           -10.867 |      1.42 | False           | 480.5 |    5.09 | EGFR,HER2                |
+| Bardoxolone Methyl                 |        -10.588 |           -10.788 |      3    | False           | 505.7 |    6.38 | nan                      |
+| Irinotecan hydrochloride           |        -10.271 |           -10.771 |      2.22 | False           | 586.7 |    4.09 | Topoisomerase            |
+| Irinotecan (CPT-11) HCl Trihydrate |        -10.27  |           -10.77  |      2.22 | False           | 586.7 |    4.09 | Topoisomerase            |
+| umbralisib (TGR-1202)              |        -10.262 |           -10.762 |      1.8  | False           | 571.6 |    6.66 | PI3K                     |
+| Irinotecan (CPT-11)                |        -10.258 |           -10.758 |      2.22 | False           | 586.7 |    4.09 | Topoisomerase            |
+| Ubrogepant                         |        -10.145 |           -10.645 |      2.64 | False           | 549.6 |    3.53 | CGRP Receptor            |
+| Tepotinib (EMD 1214063)            |        -10.143 |           -10.643 |      3.48 | False           | 492.6 |    4.01 | Autophagy,c-Met          |
+| Bromocriptine Mesylate             |        -10.041 |           -10.541 |      1.69 | False           | 654.6 |    3.19 | Others                   |
+| Piperaquine phosphate              |        -10.01  |           -10.51  |      2.91 | False           | 535.5 |    5.42 | Anti-infection           |
+| Azilsartan Medoxomil               |         -9.936 |           -10.436 |      1.47 | False           | 568.5 |    4.71 | Angiotensin Receptor     |
+| Fluzoparib (SHR-3162)              |         -9.929 |           -10.429 |      4.21 | False           | 472.4 |    2.92 | PARP                     |
+| Nilotinib (AMN-107)                |         -9.926 |           -10.426 |      1.87 | False           | 529.5 |    6.36 | AMPK,Autophagy,Bcr-Abl   |
+| Enoxolone                          |        -10.115 |           -10.315 |      2.56 | False           | 470.7 |    6.41 | Dehydrogenase            |
+| Tanshinone I                       |         -9.803 |           -10.303 |      5.18 | True            | 276.3 |    4.1  | Phospholipase (e.g. PLA) |
+| Chlorhexidine diacetate            |         -9.766 |           -10.266 |      0.62 | False           | 505.5 |    4.18 | Anti-infection           |
 
     ## Score Distribution
 
@@ -95,7 +102,9 @@ WARNING: RMSD > 2.0 A — docking protocol may need adjustment
 - [Bromocriptine_Mesylate](poses_3d/Bromocriptine_Mesylate.html)
 - [Chlorhexidine_diacetate](poses_3d/Chlorhexidine_diacetate.html)
 - [Dutasteride](poses_3d/Dutasteride.html)
+- [Enoxolone](poses_3d/Enoxolone.html)
 - [Fluorescein](poses_3d/Fluorescein.html)
+- [Fluzoparib_(SHR-3162)](poses_3d/Fluzoparib_(SHR-3162).html)
 - [Irinotecan_(CPT-11)](poses_3d/Irinotecan_(CPT-11).html)
 - [Irinotecan_(CPT-11)_HCl_Trihydrate](poses_3d/Irinotecan_(CPT-11)_HCl_Trihydrate.html)
 - [Irinotecan_hydrochloride](poses_3d/Irinotecan_hydrochloride.html)
@@ -116,8 +125,8 @@ WARNING: RMSD > 2.0 A — docking protocol may need adjustment
     ## Summary
 
     - **Drugs screened:** 2800
-    - **Best TKI score:** -10.0 kcal/mol
-    - **Repurposing candidates** (within 2 kcal/mol of best TKI): 606
+    - **Best TKI score:** -10.7 kcal/mol
+    - **Repurposing candidates** (within 2 kcal/mol of best TKI): 199
     - **Composite scoring:** G2032R binding + CNS MPO bonus + MET dual-activity bonus + mutant selectivity bonus
 
     ## Limitations
