@@ -1,0 +1,2 @@
+benchmark_id,name,description,benchmark_mode,score_columns,target,mutation,limitation_note
+ros1_known_actives_background,ROS1 known actives vs screen background,Known ROS1 inhibitors recovered from the screened library against the remainder of the scored library as presumed background.,active_vs_background,g2032r_score|composite_score,ROS1,G2032R,Provisional benchmark only: negatives are presumed background rather than validated inactives or designed decoys.

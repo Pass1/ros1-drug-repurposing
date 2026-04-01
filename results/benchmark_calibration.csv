@@ -1,0 +1,11 @@
+bin,benchmark_id,benchmark_name,benchmark_mode,score_column,n_entities,score_min,score_max,n_actives,active_rate,cumulative_entities,cumulative_actives,cumulative_active_rate
+1,ros1_known_actives_background,ROS1 known actives vs screen background,active_vs_background,g2032r_score,559,-10.955,-8.05,6,0.01073345259391771,559,6,0.01073345259391771
+2,ros1_known_actives_background,ROS1 known actives vs screen background,active_vs_background,g2032r_score,559,-8.05,-7.3,1,0.0017889087656529517,1118,7,0.006261180679785331
+3,ros1_known_actives_background,ROS1 known actives vs screen background,active_vs_background,g2032r_score,558,-7.3,-6.59,0,0.0,1676,7,0.004176610978520286
+4,ros1_known_actives_background,ROS1 known actives vs screen background,active_vs_background,g2032r_score,559,-6.59,-5.65,0,0.0,2235,7,0.003131991051454139
+5,ros1_known_actives_background,ROS1 known actives vs screen background,active_vs_background,g2032r_score,559,-5.65,25.28,0,0.0,2794,7,0.0025053686471009306
+1,ros1_known_actives_background,ROS1 known actives vs screen background,active_vs_background,composite_score,559,-11.455,-8.28,7,0.012522361359570662,559,7,0.012522361359570662
+2,ros1_known_actives_background,ROS1 known actives vs screen background,active_vs_background,composite_score,559,-8.28,-7.59,0,0.0,1118,7,0.006261180679785331
+3,ros1_known_actives_background,ROS1 known actives vs screen background,active_vs_background,composite_score,558,-7.59,-6.87,0,0.0,1676,7,0.004176610978520286
+4,ros1_known_actives_background,ROS1 known actives vs screen background,active_vs_background,composite_score,559,-6.87,-6.02,0,0.0,2235,7,0.003131991051454139
+5,ros1_known_actives_background,ROS1 known actives vs screen background,active_vs_background,composite_score,559,-6.02,25.28,0,0.0,2794,7,0.0025053686471009306

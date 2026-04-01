@@ -106,6 +106,8 @@ def _aligned_rmsd(P: np.ndarray, Q: np.ndarray) -> float:
 def _icp_rmsd(
     crystal: np.ndarray,
     docked: np.ndarray,
+    crystal_elems: list[str],
+    docked_elems: list[str],
     n_starts: int = 30,
     max_iter: int = 30,
 ) -> tuple[float, int]:
@@ -144,6 +146,11 @@ def _icp_rmsd(
         prev_rmsd = 1e9
         for _ in range(max_iter):
             dist = cdist(P_cur, docked)
+            # Prevent chemistry-blind matches from dominating the alignment.
+            for i, elem_i in enumerate(crystal_elems):
+                for j, elem_j in enumerate(docked_elems):
+                    if elem_i != elem_j:
+                        dist[i, j] += 1000.0
             row_idx, col_idx = linear_sum_assignment(dist)
 
             mp = crystal[row_idx]
@@ -235,7 +242,12 @@ def fix_rmsd_validation():
         # SMILES-derived PDBQT, or element types may be misassigned in
         # the PDB).  Use multi-start ICP for robust alignment.
         print("  Atom counts differ -> using multi-start ICP (Hungarian + Kabsch)")
-        aligned_rmsd, n_matched = _icp_rmsd(crystal_coords, docked_coords)
+        aligned_rmsd, n_matched = _icp_rmsd(
+            crystal_coords,
+            docked_coords,
+            crystal_elems,
+            docked_elems,
+        )
 
     print(f"  Matched atoms:               {n_matched}")
     print(f"  Naive RMSD  (no alignment):   {naive:.2f} A")
@@ -252,29 +264,33 @@ def fix_rmsd_validation():
 
     # --- Write updated validation file -------------------------------------
     result_lines = [
-        f"Aligned RMSD (Kabsch): {aligned_rmsd:.2f} A",
+        f"Aligned RMSD (geometry-aware estimate): {aligned_rmsd:.2f} A",
         f"Naive RMSD (unaligned): {naive:.2f} A",
         score_line if score_line else "Score: -9.0 kcal/mol",
         f"Crystal heavy atoms: {n_crystal}",
         f"Docked heavy atoms:  {n_docked}",
         f"Matched atoms: {n_matched}",
-        f"Method: {'RDKit GetBestRMS' if n_crystal == n_docked else 'multi-start ICP (Hungarian + Kabsch)'}",
+        f"Method: {'RDKit GetBestRMS' if n_crystal == n_docked else 'multi-start ICP (element-constrained Hungarian + Kabsch)'}",
         "",
     ]
     if aligned_rmsd <= 2.0:
         result_lines.append(
             f"PASS: Aligned RMSD {aligned_rmsd:.2f} A <= 2.0 A "
-            "-- docking protocol validated"
+            "-- consistent with an acceptable re-docking pose"
         )
         print(f"  PASS: Aligned RMSD {aligned_rmsd:.2f} A <= 2.0 A")
     else:
         result_lines.append(
             f"NOTE: Aligned RMSD {aligned_rmsd:.2f} A > 2.0 A "
-            "-- acceptable for Vina (typical 2-3 A for flexible ligands)"
+            "-- only moderate support for pose recovery"
         )
         result_lines.append(
             "The original 6.87 A was an artifact of comparing coordinates "
             "across different reference frames (crystal vs minimised receptor)."
+        )
+        result_lines.append(
+            "When atom counts differ, this RMSD remains an approximate geometry-based"
+            " estimate rather than a chemistry-exact atom mapping."
         )
         print(f"  NOTE: Aligned RMSD {aligned_rmsd:.2f} A (was 6.87 A before alignment fix)")
 

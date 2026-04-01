@@ -59,6 +59,25 @@ KNOWN_ROS1_TKIS = {
 ZIDESAMTINIB_SMILES = "CC(C)(O)c1cc(-c2ccc3[nH]nc(-c4cc(F)c(OC5CC(N)C5)c(F)c4)c3n2)ccn1"
 
 
+def normalize_mol(mol):
+    """Return a sanitized, desalinated molecule suitable for deduplication."""
+    remover = SaltRemover.SaltRemover()
+    try:
+        mol = remover.StripMol(mol)
+    except Exception:
+        return None
+
+    if mol is None or mol.GetNumAtoms() == 0:
+        return None
+
+    try:
+        Chem.SanitizeMol(mol)
+    except Exception:
+        return None
+
+    return mol
+
+
 def parse_selleckchem_sdf(sdf_path: Path, source_label: str) -> list[dict]:
     """Parse a Selleckchem SDF file. Returns list of drug dicts."""
     drugs = []
@@ -105,10 +124,15 @@ def parse_selleckchem_sdf(sdf_path: Path, source_label: str) -> list[dict]:
 
 
 def deduplicate_drugs(drugs: list[dict]) -> list[dict]:
-    """Deduplicate drugs by InChIKey, preferring L1300 (broader library) entries."""
+    """Deduplicate drugs by normalized InChIKey, preferring L1300 entries."""
     seen = {}
     for drug in drugs:
-        mol = drug["mol"]
+        mol = normalize_mol(drug["mol"])
+        if mol is None:
+            continue
+
+        drug["mol"] = mol
+        drug["smiles"] = Chem.MolToSmiles(mol)
         try:
             ik = inchi.MolToInchi(mol)
             if ik:
@@ -134,25 +158,12 @@ def deduplicate_drugs(drugs: list[dict]) -> list[dict]:
 
 def filter_drugs(drugs: list[dict]) -> list[dict]:
     """Filter out biologics, bad molecules, strip salts."""
-    remover = SaltRemover.SaltRemover()
     filtered = []
 
     for drug in drugs:
-        mol = drug["mol"]
-
-        # Strip salts
-        try:
-            mol = remover.StripMol(mol)
-            if mol is None or mol.GetNumAtoms() == 0:
-                continue
-        except Exception:
-            pass
-
-        # Skip molecules that fail sanitization
-        try:
-            Chem.SanitizeMol(mol)
-        except Exception:
-            log.debug("Skipping %s: sanitization failed", drug["drug_name"])
+        mol = normalize_mol(drug["mol"])
+        if mol is None:
+            log.debug("Skipping %s: normalization failed", drug["drug_name"])
             continue
 
         # Remove MW > 1000 Da (biologics/peptides)
@@ -186,7 +197,7 @@ def tag_known_tkis(drugs: list[dict]) -> list[dict]:
         # Also check if the target field mentions ROS1
         target_match = "ros1" in target_lower
 
-        drug["is_known_ros1_tki"] = name_match
+        drug["is_known_ros1_tki"] = name_match or target_match
 
     tagged = [d["drug_name"] for d in drugs if d["is_known_ros1_tki"]]
     log.info("Tagged %d known ROS1 TKIs: %s", len(tagged), tagged)

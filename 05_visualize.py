@@ -35,11 +35,15 @@ def load_data():
     ranked = pd.read_csv(RESULTS_DIR / "repurposing_ranked.csv")
     top20 = pd.read_csv(RESULTS_DIR / "top20_hits.csv")
     controls = pd.read_csv(RESULTS_DIR / "controls.csv")
+    benchmark_metrics_path = RESULTS_DIR / "benchmark_metrics.csv"
+    benchmark_metrics = (
+        pd.read_csv(benchmark_metrics_path) if benchmark_metrics_path.exists() else pd.DataFrame()
+    )
 
     c1_path = RESULTS_DIR / "campaign1_scores.csv"
     c1 = pd.read_csv(c1_path) if c1_path.exists() else pd.DataFrame()
 
-    return ranked, top20, controls, c1
+    return ranked, top20, controls, c1, benchmark_metrics
 
 
 def chart_score_distribution(c1, controls):
@@ -334,10 +338,11 @@ Cyan sticks: docked ligand.
 
 
 def generate_3d_poses(top20, controls):
-    """Generate 3D binding poses for top 20 hits and controls."""
+    """Generate 3D binding poses for the current top 20 hits and reference."""
     POSES_DIR.mkdir(parents=True, exist_ok=True)
 
     receptor_pdb = str(DATA_DIR / "receptor_G2032R.pdb")
+    expected_outputs = set()
 
     # Top 20 hits — look in campaign2 poses first, then campaign1
     generated = 0
@@ -359,6 +364,7 @@ def generate_3d_poses(top20, controls):
         output = str(POSES_DIR / f"{safe_name}.html")
         if generate_3d_pose(name, receptor_pdb, pose_path, output):
             generated += 1
+            expected_outputs.add(Path(output))
 
     # Reference: zidesamtinib
     zid_pose = RESULTS_DIR / "poses" / "campaign2" / "zidesamtinib.pdbqt"
@@ -372,11 +378,17 @@ def generate_3d_poses(top20, controls):
             str(POSES_DIR / "zidesamtinib_reference.html"),
         )
         generated += 1
+        expected_outputs.add(POSES_DIR / "zidesamtinib_reference.html")
+
+    for html_file in POSES_DIR.glob("*.html"):
+        if html_file not in expected_outputs:
+            html_file.unlink()
 
     print(f"  Generated {generated} interactive 3D pose views")
+    return sorted(expected_outputs)
 
 
-def generate_report(top20, controls, ranked):
+def generate_report(top20, controls, ranked, pose_files, benchmark_metrics):
     """Generate results/report.md."""
     n_scored = ranked["g2032r_score"].notna().sum()
     n_candidates = ranked["is_candidate"].sum() if "is_candidate" in ranked.columns else "N/A"
@@ -397,98 +409,161 @@ def generate_report(top20, controls, ranked):
 
     # 3D pose links
     pose_links = ""
-    for html_file in sorted(POSES_DIR.glob("*.html")):
+    for html_file in pose_files:
         pose_links += f"- [{html_file.stem}](poses_3d/{html_file.name})\n"
 
+    has_admet = {"lipinski_pass", "bbb_permeant", "herg_liability"}.issubset(top20.columns)
+    multiconf_path = RESULTS_DIR / "campaign2_scores_single_conf.csv"
+    multiconf_pose_dir = RESULTS_DIR / "poses" / "campaign2_multiconf"
+    has_multiconf = multiconf_path.exists() or (
+        multiconf_pose_dir.exists() and any(multiconf_pose_dir.glob("*.pdbqt"))
+    )
+    validation_status = "Not available"
+    if rmsd_path.exists():
+        if "Aligned RMSD" in rmsd_text:
+            validation_status = "Alignment-aware RMSD analysis completed in 06_improve.py."
+        elif "deferred to 06_improve.py" in rmsd_text:
+            validation_status = "Only preliminary re-docking score is available; detailed RMSD has not been rerun yet."
+        else:
+            validation_status = "Validation file present, but status could not be classified automatically."
+
+    improvements = []
+    improvements.append(f"- **Validation status** — {validation_status}")
+    improvements.append(
+        "- **Multi-conformer docking** — "
+        + (
+            "Campaign 2 was refreshed from multi-conformer docking outputs."
+            if has_multiconf
+            else "No multi-conformer evidence detected in the current outputs."
+        )
+    )
+    improvements.append(
+        "- **ADMET annotation** — "
+        + (
+            "Top-hit ADMET columns are present in `top20_hits.csv`."
+            if has_admet
+            else "ADMET columns are not present in the current `top20_hits.csv`."
+        )
+    )
+
+    benchmark_section = "Benchmark outputs not generated yet."
+    benchmark_chart = ""
+    if not benchmark_metrics.empty:
+        metric_cols = [
+            "benchmark_id",
+            "benchmark_mode",
+            "score_column",
+            "roc_auc",
+            "average_precision",
+            "ef1",
+            "nef1",
+            "ef5",
+            "nef5",
+            "ef10",
+            "nef10",
+            "median_active_rank",
+            "hits_top_10",
+            "hits_top_25",
+            "hits_top_50",
+        ]
+        available_metric_cols = [c for c in metric_cols if c in benchmark_metrics.columns]
+        benchmark_section = benchmark_metrics[available_metric_cols].to_markdown(index=False)
+        benchmark_chart_path = CHARTS_DIR / "benchmark_enrichment.png"
+        calibration_chart_path = CHARTS_DIR / "benchmark_calibration.png"
+        if benchmark_chart_path.exists():
+            benchmark_chart = "\n## Benchmark Enrichment\n\n![Benchmark enrichment](charts/benchmark_enrichment.png)\n"
+        if calibration_chart_path.exists():
+            benchmark_chart += "\n## Benchmark Calibration\n\n![Benchmark calibration](charts/benchmark_calibration.png)\n"
+
     report = textwrap.dedent(f"""\
-    # ROS1 Drug Repurposing Screen — Results
+# ROS1 Drug Repurposing Screen — Results
 
-    **Date:** {date.today().isoformat()}
+**Date:** {date.today().isoformat()}
 
-    **Patient context:** 39yo, lung adenocarcinoma.
-    EZR::ROS1 fusion (exon 34), MET IHC 3+ 50%, PD-L1 TPS 95%.
-    High risk of CNS metastasis.
+**Patient context:** 39yo, lung adenocarcinoma.
+EZR::ROS1 fusion (exon 34), MET IHC 3+ 50%, PD-L1 TPS 95%.
+High risk of CNS metastasis.
 
-    ## Methods
+## Methods
 
-    - **Targets:** ROS1 G2032R (PDB 9QEK), ROS1 WT (PDB 7Z5X), MET (PDB 2WGJ)
-    - **Grid box:** 25x25x25 A centered on ATP-binding pocket catalytic triad
-    - **Docking:** AutoDock Vina
-      - Campaign 1: All drugs, exhaustiveness=8
-      - Campaign 2: Top 50 + controls, exhaustiveness=32, 9 poses
-      - Campaign 3: Top 20 + controls vs WT and MET, exhaustiveness=32
-    - **Library:** {n_scored} FDA-approved drugs (Selleckchem L1300 + L8000)
+- **Targets:** ROS1 G2032R (PDB 9QEK), ROS1 WT (PDB 7Z5X), MET (PDB 2WGJ)
+- **Grid box:** 25x25x25 A centered on ATP-binding pocket catalytic triad
+- **Docking:** AutoDock Vina
+  - Campaign 1: All drugs, exhaustiveness=8
+  - Campaign 2: Top 50 + controls, exhaustiveness=32, 9 poses
+  - Campaign 3: Top 20 + controls vs WT and MET, exhaustiveness=32
+- **Library:** {n_scored} FDA-approved drugs (Selleckchem L1300 + L8000)
 
-    ## Re-docking Validation
+## Re-docking Validation
 
-    ```
-    {rmsd_text}
-    ```
+```
+{rmsd_text}
+```
 
-    ## Known TKI Control Scores
+## Known TKI Control Scores
 
-    {ctrl_md}
+{ctrl_md}
 
-    ## Top 20 Repurposing Candidates
+## Top 20 Repurposing Candidates
 
-    {top20_md}
+{top20_md}
 
-    ## Score Distribution
+## Score Distribution
 
-    ![Score distribution](charts/score_distribution.png)
+![Score distribution](charts/score_distribution.png)
 
-    ## Top 20 vs Controls
+## Top 20 vs Controls
 
-    ![Top 20 bar chart](charts/top20_scores.png)
+![Top 20 bar chart](charts/top20_scores.png)
 
-    ## CNS Penetration vs Binding
+## CNS Penetration vs Binding
 
-    ![CNS vs binding](charts/cns_vs_binding.png)
+![CNS vs binding](charts/cns_vs_binding.png)
 
-    ## G2032R vs WT Selectivity
+## G2032R vs WT Selectivity
 
-    ![Selectivity scatter](charts/selectivity_g2032r_vs_wt.png)
+![Selectivity scatter](charts/selectivity_g2032r_vs_wt.png)
 
-    ## Dual ROS1/MET Activity
+## Dual ROS1/MET Activity
 
-    ![Dual activity](charts/dual_ros1_met.png)
+![Dual activity](charts/dual_ros1_met.png)
 
-    ## Interactive 3D Binding Poses
+## Benchmark Metrics
 
-    {pose_links if pose_links else "No poses generated yet."}
+{benchmark_section}
+{benchmark_chart}
 
-    ## Summary
+## Interactive 3D Binding Poses
 
-    - **Drugs screened:** {n_scored}
-    - **Best TKI score:** {best_tki:.1f} kcal/mol
-    - **Repurposing candidates** (within 2 kcal/mol of best TKI): {n_candidates}
-    - **Composite scoring:** G2032R binding + CNS MPO bonus + MET dual-activity bonus + mutant selectivity bonus
+{pose_links if pose_links else "No poses generated yet."}
 
-    ## Limitations
+## Summary
 
-    - **Docking != binding.** Vina scores are approximations. Experimental validation is required.
-    - **Scoring function limitations.** Vina's empirical scoring may miss important interactions
-      (e.g., cation-pi, halogen bonds, water-mediated contacts).
-    - **Static receptor.** No induced fit or protein flexibility modeled.
-    - **Off-target effects.** Predicted binding does not account for selectivity across the kinome.
+- **Drugs screened:** {n_scored}
+- **Best TKI score:** {best_tki:.1f} kcal/mol
+- **Repurposing candidates** (within 2 kcal/mol of best TKI): {n_candidates}
+- **Composite scoring:** G2032R binding + CNS MPO bonus + MET dual-activity bonus + mutant selectivity bonus
 
-    ## Resolved Limitations
+## Limitations
 
-    - **Re-docking RMSD** — corrected from 6.87 A (coordinate frame artifact) to 2.62 A
-      (Kabsch alignment with ICP atom matching). Protocol validated.
-    - **Multi-conformer docking** — Top 50 + TKIs re-docked with 10 ETKDG v3 conformers/drug,
-      exhaustiveness=32, 9 poses. Best score across all conformers kept.
-    - **ADMET annotation** — Lipinski, Veber, GI absorption, BBB, P-gp, CYP3A4 inhibition,
-      hERG liability, lorlatinib DDI flag (informational only), and PPB for top 20 hits.
+- **Docking != binding.** Vina scores are approximations. Experimental validation is required.
+- **Scoring function limitations.** Vina's empirical scoring may miss important interactions
+  (e.g., cation-pi, halogen bonds, water-mediated contacts).
+- **Static receptor.** No induced fit or protein flexibility modeled.
+- **Off-target effects.** Predicted binding does not account for selectivity across the kinome.
 
-    ## Next Steps
+## Current Improvement Status
 
-    1. **Discuss with oncologist** — review candidates for clinical plausibility
-    2. **Experimental validation** — CRO testing (e.g., Eurofins, Reaction Biology)
-       for top candidates: biochemical kinase assay, cell-based ROS1 activity
-    3. **Community** — share findings with ROS1ders patient network
-    4. **Molecular dynamics** — run MD simulations on top 3-5 hits for binding stability
-    """)
+{chr(10).join(improvements)}
+
+## Next Steps
+
+1. **Discuss with oncologist** — review candidates for clinical plausibility
+2. **Experimental validation** — CRO testing (e.g., Eurofins, Reaction Biology)
+   for top candidates: biochemical kinase assay, cell-based ROS1 activity
+3. **Community** — share findings with ROS1ders patient network
+4. **Molecular dynamics** — run MD simulations on top 3-5 hits for binding stability
+""")
 
     (RESULTS_DIR / "report.md").write_text(report)
     print("  Saved results/report.md")
@@ -499,7 +574,7 @@ def main():
     POSES_DIR.mkdir(parents=True, exist_ok=True)
 
     print("=== Generating Visualizations ===\n")
-    ranked, top20, controls, c1 = load_data()
+    ranked, top20, controls, c1, benchmark_metrics = load_data()
 
     # Charts
     print("Generating charts...")
@@ -512,11 +587,11 @@ def main():
 
     # 3D poses
     print("\nGenerating 3D binding poses...")
-    generate_3d_poses(top20, controls)
+    pose_files = generate_3d_poses(top20, controls)
 
     # Report
     print("\nGenerating report...")
-    generate_report(top20, controls, ranked)
+    generate_report(top20, controls, ranked, pose_files, benchmark_metrics)
 
     print("\n=== Visualization complete ===")
     print(f"Charts: {CHARTS_DIR}")

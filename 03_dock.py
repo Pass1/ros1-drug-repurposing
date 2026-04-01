@@ -91,7 +91,12 @@ def dock_worker(args):
 
 
 def run_redocking_validation(receptor_pdbqt: str, grid: dict):
-    """Re-dock zidesamtinib crystal pose and compute RMSD."""
+    """Re-dock zidesamtinib crystal pose and save a preliminary validation note.
+
+    Detailed RMSD analysis is delegated to 06_improve.py, which can account
+    for frame alignment and atom mapping differences between crystal and docked
+    representations.
+    """
     print("\n=== Re-docking Validation ===")
 
     crystal_pdb = str(DATA_DIR / "controls" / "zidesamtinib_crystal.pdb")
@@ -124,50 +129,13 @@ def run_redocking_validation(receptor_pdbqt: str, grid: dict):
     with open(docked_pose_path, "w") as f:
         f.write(poses_str)
 
-    # Compute RMSD between crystal and docked pose
-    # Parse crystal PDB coords
-    try:
-        crystal_mol = Chem.MolFromPDBFile(crystal_pdb, removeHs=True, sanitize=False)
-        # Parse docked PDBQT - extract coordinates from ATOM/HETATM lines
-        docked_coords = []
-        crystal_coords = []
-
-        if crystal_mol is not None:
-            conf = crystal_mol.GetConformer()
-            for i in range(crystal_mol.GetNumAtoms()):
-                pos = conf.GetAtomPosition(i)
-                crystal_coords.append([pos.x, pos.y, pos.z])
-
-        # Parse docked PDBQT for coordinates
-        for line in poses_str.split("\n"):
-            if line.startswith("ATOM") or line.startswith("HETATM"):
-                x = float(line[30:38])
-                y = float(line[38:46])
-                z = float(line[46:54])
-                docked_coords.append([x, y, z])
-
-        if crystal_coords and docked_coords:
-            # Use minimum of the two coordinate sets
-            n = min(len(crystal_coords), len(docked_coords))
-            c1 = np.array(crystal_coords[:n])
-            c2 = np.array(docked_coords[:n])
-            rmsd = np.sqrt(np.mean(np.sum((c1 - c2) ** 2, axis=1)))
-            print(f"  RMSD (heavy atoms): {rmsd:.2f} A")
-
-            result = f"RMSD: {rmsd:.2f} A\nScore: {score:.1f} kcal/mol\n"
-            if rmsd > 2.0:
-                result += "WARNING: RMSD > 2.0 A — docking protocol may need adjustment\n"
-                print("  WARNING: RMSD > 2.0 A — protocol may need adjustment")
-            else:
-                result += "PASS: RMSD <= 2.0 A — docking protocol validated\n"
-                print("  PASS: Re-docking validated")
-        else:
-            result = f"Score: {score:.1f} kcal/mol\nRMSD: could not compute (coordinate mismatch)\n"
-            print("  Could not compute RMSD")
-
-    except Exception as e:
-        result = f"Score: {score:.1f} kcal/mol\nRMSD: error ({e})\n"
-        print(f"  RMSD computation error: {e}")
+    result = (
+        f"Score: {score:.1f} kcal/mol\n"
+        "RMSD: deferred to 06_improve.py\n"
+        "NOTE: Raw coordinate-order RMSD is intentionally not reported here because\n"
+        "crystal and docked ligand frames/atom lists may differ.\n"
+    )
+    print("  Detailed RMSD deferred to 06_improve.py")
 
     Path(RESULTS_DIR / "validation_rmsd.txt").write_text(result)
     print(f"  Saved to results/validation_rmsd.txt")
