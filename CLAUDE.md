@@ -122,11 +122,11 @@ the full library screen (speed vs accuracy tradeoff), then re-dock top
 
 ### Current benchmark snapshot
 - Current benchmark set: `ros1_known_actives_background`
-- Current matched positive rows: 13
-- Current unique active entities after alias/salt collapse: 7
+- Current matched positive rows: 15
+- Current unique active entities after alias/salt collapse: 9
 - Current metrics on existing ranked outputs:
-  - `g2032r_score`: ROC AUC 0.935, AP 0.064, EF1 14.3
-  - `composite_score`: ROC AUC 0.968, AP 0.093, EF1 28.5
+  - `g2032r_score`: ROC AUC 0.927, AP 0.056, EF1 11.1
+  - `composite_score`: ROC AUC 0.942, AP 0.077, EF1 22.2
 - Interpretation:
   - The workflow retrieves known ROS1 actives better than random.
   - `composite_score` currently outperforms raw `g2032r_score`.

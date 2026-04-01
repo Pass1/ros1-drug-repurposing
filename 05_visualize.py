@@ -380,9 +380,10 @@ def generate_3d_poses(top20, controls):
         generated += 1
         expected_outputs.add(POSES_DIR / "zidesamtinib_reference.html")
 
-    for html_file in POSES_DIR.glob("*.html"):
-        if html_file not in expected_outputs:
-            html_file.unlink()
+    if expected_outputs:
+        for html_file in POSES_DIR.glob("*.html"):
+            if html_file not in expected_outputs:
+                html_file.unlink()
 
     print(f"  Generated {generated} interactive 3D pose views")
     return sorted(expected_outputs)
@@ -540,7 +541,7 @@ High risk of CNS metastasis.
 ## Summary
 
 - **Drugs screened:** {n_scored}
-- **Best TKI score:** {best_tki:.1f} kcal/mol
+- **Best TKI score:** {f"{best_tki:.1f}" if isinstance(best_tki, (int, float)) else best_tki} kcal/mol
 - **Repurposing candidates** (within 2 kcal/mol of best TKI): {n_candidates}
 - **Composite scoring:** G2032R binding + CNS MPO bonus + MET dual-activity bonus + mutant selectivity bonus
 

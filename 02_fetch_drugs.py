@@ -59,15 +59,17 @@ KNOWN_ROS1_TKIS = {
 ZIDESAMTINIB_SMILES = "CC(C)(O)c1cc(-c2ccc3[nH]nc(-c4cc(F)c(OC5CC(N)C5)c(F)c4)c3n2)ccn1"
 
 
+_SALT_REMOVER = SaltRemover.SaltRemover()
+
+
 def normalize_mol(mol):
     """Return a sanitized, desalinated molecule suitable for deduplication."""
-    remover = SaltRemover.SaltRemover()
     try:
-        mol = remover.StripMol(mol)
+        mol = _SALT_REMOVER.StripMol(mol)
     except Exception:
         return None
 
-    if mol is None or mol.GetNumAtoms() == 0:
+    if mol is None or mol.GetNumAtoms() < 2:
         return None
 
     try:
@@ -146,10 +148,16 @@ def deduplicate_drugs(drugs: list[dict]) -> list[dict]:
 
         if ik_key not in seen:
             seen[ik_key] = drug
-        elif drug["source"] == "selleckchem_L1300" and seen[ik_key]["source"] != "selleckchem_L1300":
-            # Merge target info from L8000 (anticancer) before overwriting
-            seen[ik_key]["target"] = seen[ik_key].get("target", "") or drug.get("target", "")
-            seen[ik_key] = {**drug, "target": seen[ik_key]["target"] or drug.get("target", "")}
+        else:
+            # Always merge target info from both sources
+            existing_target = seen[ik_key].get("target", "")
+            new_target = drug.get("target", "")
+            merged_target = existing_target or new_target
+            # Prefer L1300 (broader library) over L8000
+            if drug["source"] == "selleckchem_L1300" and seen[ik_key]["source"] != "selleckchem_L1300":
+                seen[ik_key] = {**drug, "target": merged_target}
+            else:
+                seen[ik_key]["target"] = merged_target
 
     result = list(seen.values())
     log.info("Deduplicated: %d -> %d unique drugs", len(drugs), len(result))
@@ -157,13 +165,17 @@ def deduplicate_drugs(drugs: list[dict]) -> list[dict]:
 
 
 def filter_drugs(drugs: list[dict]) -> list[dict]:
-    """Filter out biologics, bad molecules, strip salts."""
+    """Filter out biologics and bad molecules.
+
+    Salt stripping and sanitization already happened in deduplicate_drugs
+    via normalize_mol, so we only need to check MW here.
+    """
     filtered = []
 
     for drug in drugs:
-        mol = normalize_mol(drug["mol"])
-        if mol is None:
-            log.debug("Skipping %s: normalization failed", drug["drug_name"])
+        mol = drug["mol"]
+        if mol is None or mol.GetNumAtoms() < 2:
+            log.debug("Skipping %s: invalid molecule", drug["drug_name"])
             continue
 
         # Remove MW > 1000 Da (biologics/peptides)
@@ -172,8 +184,6 @@ def filter_drugs(drugs: list[dict]) -> list[dict]:
             log.debug("Skipping %s: MW %.0f > 1000", drug["drug_name"], mw)
             continue
 
-        drug["mol"] = mol
-        drug["smiles"] = Chem.MolToSmiles(mol)
         filtered.append(drug)
 
     log.info("Filtered: %d -> %d drugs (removed biologics, salts, bad molecules)",
@@ -385,7 +395,7 @@ def main():
     for drug in tqdm(drugs, desc="Processing drugs"):
         mol = drug["mol"]
         name = drug["drug_name"]
-        safe_name = re.sub(r'[^\w\-.]', '_', name)
+        safe_name = name.replace("/", "_").replace(" ", "_")
 
         # Generate 3D conformer
         try:

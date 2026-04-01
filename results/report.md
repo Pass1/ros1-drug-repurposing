@@ -100,8 +100,8 @@ When atom counts differ, this RMSD remains an approximate geometry-based estimat
 
 | benchmark_id                  | benchmark_mode       | score_column    |   roc_auc |   average_precision |     ef1 |     nef1 |     ef5 |     nef5 |    ef10 |    nef10 |   median_active_rank |   hits_top_10 |   hits_top_25 |   hits_top_50 |
 |:------------------------------|:---------------------|:----------------|----------:|--------------------:|--------:|---------:|--------:|---------:|--------:|---------:|---------------------:|--------------:|--------------:|--------------:|
-| ros1_known_actives_background | active_vs_background | g2032r_score    |  0.935133 |           0.0642224 | 14.2551 | 0.142857 | 14.2551 | 0.714286 | 7.12755 | 0.714286 |                  104 |             1 |             1 |             2 |
-| ros1_known_actives_background | active_vs_background | composite_score |  0.967553 |           0.0931942 | 28.5102 | 0.285714 | 14.2551 | 0.714286 | 9.97857 | 1        |                   67 |             1 |             2 |             2 |
+| ros1_known_actives_background | active_vs_background | g2032r_score    |  0.926511 |           0.0560651 | 11.0873 | 0.111111 | 11.0873 | 0.555556 | 6.65238 | 0.666667 |                  114 |             1 |             1 |             2 |
+| ros1_known_actives_background | active_vs_background | composite_score |  0.94229  |           0.077184  | 22.1746 | 0.222222 | 11.0873 | 0.555556 | 7.76111 | 0.777778 |                   72 |             1 |             2 |             2 |
 
 ## Benchmark Enrichment
 

@@ -126,6 +126,13 @@ def _icp_rmsd(
     n_d = len(docked)
     best_rmsd = 1e9
 
+    # Pre-compute element mismatch penalty matrix (avoids O(n^2) per iteration)
+    elem_penalty = np.zeros((n_c, n_d))
+    for i, ei in enumerate(crystal_elems):
+        for j, ej in enumerate(docked_elems):
+            if ei != ej:
+                elem_penalty[i, j] = 1000.0
+
     for trial in range(n_starts):
         if trial == 0:
             # Start with centroid alignment only
@@ -145,21 +152,26 @@ def _icp_rmsd(
 
         prev_rmsd = 1e9
         for _ in range(max_iter):
-            dist = cdist(P_cur, docked)
-            # Prevent chemistry-blind matches from dominating the alignment.
-            for i, elem_i in enumerate(crystal_elems):
-                for j, elem_j in enumerate(docked_elems):
-                    if elem_i != elem_j:
-                        dist[i, j] += 1000.0
+            dist = cdist(P_cur, docked) + elem_penalty
             row_idx, col_idx = linear_sum_assignment(dist)
 
-            mp = crystal[row_idx]
-            mq = docked[col_idx]
+            # Filter out cross-element assignments before Kabsch fit
+            matched_mask = np.array([
+                crystal_elems[r] == docked_elems[c]
+                for r, c in zip(row_idx, col_idx)
+            ])
+            valid_rows = row_idx[matched_mask]
+            valid_cols = col_idx[matched_mask]
+            if len(valid_rows) < 3:
+                break  # not enough matched atoms for Kabsch
+
+            mp = crystal[valid_rows]
+            mq = docked[valid_cols]
             R, t = _kabsch_fit(mp, mq)
             P_cur = crystal @ R.T + t
 
             rmsd = float(np.sqrt(np.mean(
-                np.sum((P_cur[row_idx] - docked[col_idx]) ** 2, axis=1)
+                np.sum((P_cur[valid_rows] - docked[valid_cols]) ** 2, axis=1)
             )))
             if abs(prev_rmsd - rmsd) < 1e-6:
                 break
@@ -167,7 +179,7 @@ def _icp_rmsd(
 
         if rmsd < best_rmsd:
             best_rmsd = rmsd
-            best_n_matched = len(row_idx)
+            best_n_matched = int(matched_mask.sum())
 
     return best_rmsd, best_n_matched
 
